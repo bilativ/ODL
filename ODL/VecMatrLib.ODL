@@ -1,0 +1,159 @@
+#VecMatrLib
+	$TYPES
+		T2DPoint: record	
+			X: float
+			Y: float
+			...
+			$FUNCTIONS
+				SUB(p1, p2: T2DPoint): T2DPoint
+					result(p1.x-p2.x, p1.y-p2.y)
+				ADD(p1, p2: T2DPoint): T2DPoint
+					result(p1.x+p2.x, p1.y+p2.y)
+				NEG(p: T2DPoint):T2DPoint
+					result(-p.x, -p.y)
+				MUL(k: float; p: T2DPoint):T2DPoint
+					result(k*p.x, k*p.y)
+				MUL(p1, p2: T2DPoint):T2DPoint
+					result(p1.x*p2.x + p1.y*p2.y)
+			$PROPERTIES
+				Length: float(sqrt(X*X+Y*Y))
+				
+		T3DPoint:record
+			X: float
+			Y: float
+			Z: float
+			$FUNCTIONS
+				SUB(p1, p2: T3DPoint): T3DPoint
+					result(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z)
+				ADD(p1, p2: T3DPoint): T3DPoint
+					result(p1.x+p2.x, p1.y+p2.y, p1.z+p2.z)
+				NEG(p: T3DPoint):T3DPoint
+					result(-p.x, -p.y, -p.z)
+				MUL(k: float; p: T3DPoint):T3DPoint
+					result(k*p.x, k*p.y, k*p.z)
+				MUL(k: float; p: T3DPoint):T3DPoint
+					result(p1.x*p2.x + p1.y*p2.y + p1.z*p2.z)
+			$PROPERTIES
+				Length: float(sqrt(X*X+Y*Y+Z*Z))
+				
+		T3DBox:object
+			Min, Max: T3DPoint
+			Empty: boolean(false)
+			$FUNCTIONS	
+				FromPoints(p1, p2: T3DPoint): T3DBox
+					result.Min(min(p1.x, p2.x), min(p1.y, p2.y))
+					result.Max(min(p1.y, p2.y), max(p1.y, p2.y))
+				
+		T2DArc:object
+			$DATA
+				pc: T2DPoint
+				vX: T2DPoint
+				vY: T2DPoint
+				r: float
+				Angle: float
+			$FUNCTIONS
+				constructor FromPoints(p1, p2, pc: T2DPoint; r: float)
+					self.pc(pc)
+					self.vX(NormV(p2-p1))
+					self.vY(-vX.y, vX.x)
+					self.r(abs(r))
+					IF(r<0)
+						self.vY(-self.vY)
+					var tt := NormV(p2-p1)
+					self.Angle(GetArcAngle(tt*self.vX, tt*self.vY))
+					
+				function GetPoint(t:float):T2DPoint
+					var a := t*Angle
+					result(pc.x+r*cos(a), pc.y+r*sin(a))
+				
+	$FUNCTIONS
+		function GetArcAngle(cs, sn: float):float
+			result(arctan2(cs, sn))
+		
+		function NormV(p: T2DPoint): T2DPoint
+			var L := p.Length
+			L := if(L<Zero, 1, L)
+			result(p.x/L, p.y/L)
+			
+
+//Example
+	$FUNCTIONS
+		function IGLCanvas.DrawArc(self: TGLCanvas, p1, p2, pc: T3DPoint, r: float)
+			var a := T2Arc.FromPoints(p1, p2, pc, r)
+			glBegin(LineStrip)
+			glVertex(p1)
+			var N: integer(10)
+			FOR(i:integer, 1, N)
+				glVertex(a.GetPoint(i/N))
+			glEnd
+		
+	$DOC
+		//Преобразууется в
+		TGLCanvasDrawArc: function
+			$RESULT:null
+			$PARAMETERS
+				self: IGLCanvas
+				p1: T3DPoint
+				p2: T3DPoint
+				pc: T3DPoint
+				r: float
+			$LOCALVARS
+				a: T2DArc
+				N: integer(10)
+			$CODE: arrayOf.object
+				a(p1, p2, pc, r)
+				call glCanvasGlBegin(self(self), lt(LineStrip))
+				call glCanvasGlVertex(@p1)
+				N(10)
+				$FORCYLCE: TFORCYCLE
+					iMin: integer(1)
+					iMax: integer(10)
+					function forcycleFunction(i: integer)
+						call glCanvasVertex(self, T2DArc(T2DArcGetPoint(a, i/n)))
+				call glCanvasGlEnd()
+		
+	$DELPHICODE:text
+		
+		IODLProp:interface
+		begin
+			function GetName: string
+			function GetType: string
+			function GetFullType: string
+			function GetRawValue: string
+			function SetRawValue(const Value: string)
+			function GetPtr: pointer
+			function GetChildCount: integer
+			function GetProp(i:integer): IODLProp
+			function GetType: enum(ptObject, ptInteger, ptDouble, ptString, ptEnum)
+		end
+		
+		
+		IODLRuntime: interface
+		begin
+			procedure callInterfaceMethod(
+				interfacePtr: pointer //Указатель на объект
+				methodPtr: pointer    //Имя метода
+				MethodParameters:IODLProp //отсюда читаем параметры
+				MethodResult: IODLProp //сюда записываем результат
+			);
+			function GetPropPtrByName(const name: string; ParentProp: pointer): pointer
+			procedure SetPropValue(ParentProp, PropPtr: pointer; ValuePtr: pointer)
+		end;
+		
+		INameSpace: interface
+		begin
+			function FindObject(Parent: pointer; name: string): pointer;
+			function FindFunction(name: string; Parent: pointer; out VarCount: integer; out FuncPtr: pointer): boolean
+		end
+		
+		TRPNNodeType=(opAdd,opSub,opNeg,opDim,opPow,opCall,opCase,opIf,opValue,opInSet)
+		TRPNNode:record
+			NodeType:TRPNNodeType
+			NodeValue:pointer
+		
+		IODLEngine: interface
+		begin
+			function EvaluateExpression(exp: string; namespace: INamespace): TArray<TRPNNode>
+		end;
+	
+		

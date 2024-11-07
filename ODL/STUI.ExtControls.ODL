@@ -1,0 +1,211 @@
+$USES
+	AbstractTypes
+	STUI.ControlTypes
+	STUI.StdControls
+	
+$STYLES
+	ButtonsSize: integer(20)
+	TFORM.TITLE.Height(50)
+	TCOlORPICKER.FOOTER.Size.Height(40)
+	
+$BUTTONS
+	TIconButton:TButton
+		Hint(@Caption)
+		$CONTROLS
+			Icn:TIcon
+				Icon(@..Icon)
+		$STRUCTURE	
+			Icn
+
+	TTextButton:TButton
+		$CONTROLS
+			Icn:TIcon
+				Icon(@Icon)
+			Lbl:TLabel
+				Text(@Caption)
+		$STRUCTURE	
+			Icn
+			Lbl
+$PANELS
+	LeftToRightPanel: TPanel
+		DESIGN.Layout:LeftToRightLayout
+		
+	HorzCenteredPanel: TPanel
+		DESIGN.Layout:HorzCenteredLayout
+		
+	RightToLeftPanel: TPanel	
+		DESIGN.Layout:RightToLeftLayout
+		
+	TopToBottomPanel: TPanel
+		DESIGN.Layout:TopToBottomLayout
+
+	BottomToTopPanel: TPanel
+		DESIGN.Layout:BottomToTopLayout
+	
+	StackPanel: TPanel
+		DESIGN.Layout:StackLayout
+			
+$FORMS		
+	TFormTitle: TStackPanel
+		Height: integer(40)
+		Caption: rsString	
+		DESIGN
+			Size.Height(@..Height)
+			
+		CONTROLS
+			Lbl: TLabel
+				Text(@..Caption)		
+			CloseButton:TIconButton
+				Icon(CloseIcon)
+				Hint(@UIHints.Close)
+			CustomButtons: LeftToRightPanel
+		STRUCTURE
+			HorzCenteredPanel
+				Lbl
+			RightToLeftPanel
+				CustomButtons
+				CloseButton
+
+	
+	TForm: TopToBottomPanel
+		Caption:string //Form caption
+		HeaderHeight: integer
+
+		CONTROLS	
+			Title:TFormTitle 
+				Caption(@..Caption)
+				Height(@..HeaderHeight)
+			Page:TopToBottomPanel
+			Footer: LeftToRightPanel
+		STRUCTURE
+			Title
+			VerticalScrollBox
+				Page
+			Footer
+			
+
+	TColorSource: TSource
+		HexCode: string
+		RGB:TRGB
+		HSL:THSL
+		Alpha: TAlpha
+
+	TColorPicker: TForm
+		ShowAlpha: boolean
+		PickedColor: color
+		ColorButtonSize: integer(20)
+		BigGolorButtonSize: integer(40)
+		SliderMargins: integer(8)
+		SliderWidth: integer(20)
+		SysColors: arrayOf.color
+		UserColors: arrayOf.color
+		
+		$TYPES
+			constructor LabeledControl(Caption: string, c: TControl):TRightToLeftPanel
+				CONTROLS
+					Lbl: TLabel(Caption(Caption))
+					Val: TControl(@c)
+				STRUCTURE
+					Lbl
+					Val
+				
+			TColorButton: TButton
+				SourceColor: color
+				Size(@ColorButtonSize)
+				Design.Style.Color(SourceColor)
+			TBigColorButton: TButton
+				Size(@BigColorButtonSize)
+			TDialogButton: TButton
+			THueSatControl: TXYSlider
+			
+			TPalletteControl: TListControl
+				Source:arrayOf.color
+				ItemFlow(horizontal)
+				Wrap(true)
+				ItemControl:TColorButton
+					SourceColor(@..SourceColors($index))
+			
+		CONTROLS
+			RInput:TEdit
+			GInput:TEdit
+			BInput:TEdit
+			HInput:TEdit
+			SInput:TEdit
+			LInput:TEdit
+			HexInput:TEdit
+			OkButton:TDialogButton
+				Caption("OK")
+
+			CancelButton:TDialogButton
+				Caption("Cancel")
+		
+			CurColor: TBigColorButton
+			
+			PrevColor:TBigColorButton
+			
+			HueSatField:TXYSlider
+			
+			AlphaSlider: THorzSlider
+				DESIGN
+					Size.Width(@HueSatField.Size.Width)
+					Size.Height(@SliderWidth)
+					Margins.Top(@SliderMargins)
+					Margins.Bottom(@SliderMargins)
+					Visible(@ShowAlpha)
+				
+			LightSlider: TVertSlider
+				DESIGN
+					Margins.Left(@SliderMargins)
+					Margins.Right(@SliderMargins)
+					Size.Height(@HueSatField.Size)
+					Size.Width(@SliderWidth)
+
+			PalettePanel:TopToBottomPanel	
+				Caption:string("Palette")
+				CONTROLS
+					Lbl(Caption(@..Caption))
+					SysPallet : TPalleteControl(@SysColors)
+					UserPallet: TPalleteControl(@UserColors)
+				STRUCTURE
+					Lbl
+					TopToBottomPanel
+						SysPallet
+						UserPallet
+
+		SysPalette[]:IControl
+		UserPalette[]:IControl
+		
+		TPalletePanel:TopToBottomPanel
+			type(flow)
+			Colors[]:TColor
+			STRUCTURE[Colors]
+				ColorButton:TColorControl
+					Color(#.ValueAsInteger)
+		
+		//implementation
+		Page.DESIGN.Layout:TopToBottom
+		Page.STRUCTURE
+			LeftToRightPanel
+				HueSatField
+				LightSlider
+			AlphaSlider
+			LeftToRightPanel
+				LeftToRightPanel
+					PrevColor
+					CurColor
+				LeftToRightPanel
+					TopToBottomPanel
+						LabeledControl(H:, HInput)
+						LabeledControl(S:, SInput)
+						LabeledControl(L:, LInput)
+					TopToBottomPanel    
+						LabeledControl(R:, RInput)
+						LabeledControl(G:, GInput)
+						LabeledControl(B:, BInput)
+			RightToLeftPanel	
+				LabeledControl(RRGGBB, HexInput)
+			PalettePanel
+		Footer.STRUCTURE
+			OkButton
+			CancelButton
+

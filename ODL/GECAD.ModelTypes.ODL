@@ -1,0 +1,140 @@
+$USES
+	ODL.AbstractTypes
+	GeSolverFile
+
+$TYPES
+	type units:float
+	
+	type linear: units
+
+	type angular: units
+	
+	type linearUnits: enum(mm, cm, m, in, ft)
+
+	type angularUnits: enum(degrees, radians)
+	
+	
+$TYPES
+	TVariable:object
+		
+	TModelEntity: object
+		Caption: string
+		Visible: boolean
+		
+	TUnitVector: object
+		X: unitfloat
+		Y: unitfloat
+		Z: unitfloat
+	TAxis: TUnitVector
+
+	const XAxis:TAxis(1,0,0)
+	const YAxis:TAxis(0,1,0)
+	const ZAxis:TAxis(0,0,1)
+	
+	TPoint: object
+		X: linear(0)
+		Y: linear(0)
+		Z: linear(0)
+		
+	const ZeroPoint:TPoint(0,0,0)
+	
+		
+	TmodelTransform:object
+		$TYPES
+			TCoordTransform:float
+			X: TCoordTransform
+			Y: TCoordTransform
+			Z: TCoordTransform
+			A: TCoordTransform
+			B: TCoordTransform
+			C: TCoordTransform
+		Sequence:arrayOf.TCoordTransform #flat
+		
+	TPlane: object
+		vX: TAxis(XAxis)
+		vY: TAxis(YAxis)
+		vT: TPoint(ZeroPoint)
+		
+	TModelPlane: TModelEntity
+		Plane:TPlane(null)
+		Transform: TModelTransform(null)
+	
+	TStdPlane: TModelPlane
+		Plane.vT(ZeroPoint)
+	
+	const Plane: object
+		XY:TStdPlane
+			Plane(XAxis, YAxis)
+	    ZX: TStdPlane
+			Plane(ZAxis, XAxis)
+		YZ: TStdPlane
+			Plane(YAxis, ZAxis)
+		
+	Feature:TModelEntity
+		Enabled: boolean
+		
+	TBoolOp: enum(New, Add, Sub, Int, Auto)
+
+	TEvalFace: string
+
+	TRefEntity: string
+		
+	type FeatureWithFace:TFeature	
+		BoolOp: TBoolOp
+		Face: TEvalFace
+		...
+		ThinWall
+			Enabled: boolean
+			Params #flat #enabled(Enabled)
+				Thickness: linear
+				Side:enum(both, left, right)
+				RoundCorners: boolean(false)
+		Pattern:arrayOf.TPattern
+		
+	type Extrude:TFeatureWithFace
+		TopPlane
+			Mode: enum(ThroughAll, ToNext, Distance)
+			Params:object #enabled(Mode=Distance)
+				Dimension: linear 
+				Side: boolean
+				BaseEntity:TRefEntity
+		BottomPlane
+			Enabled: boolean
+			Mode: enum(Symmetrical, ToNext, ThroughAll, Distance) #enabled(Enabled)
+			Params:object #enabled(Enabled AND Mode=Distance)
+				Dimension: linear 
+				Side: boolean
+				BaseEtity:TRefEntity
+				
+	constructor TGeCADModel.PrismModel(Sketch: TGeSolverModel, Height: float(10), Name: string)
+		Sketches
+			S1(Sketch1)
+		Definition
+			S1:SketchFeature
+				Plane(Planes.XY)
+				Model($params.Sketch)
+			Extrude	
+				TopLevel.Distance($params.Height)
+				Face(S1)
+		Parts
+			Prism
+				id($params.Name)
+				
+	constructor TGeCADModel.Cube(w, h, d: float, id: string)
+		self(PrismModel(TGeSolverModel.RectWH(w, h), d))
+		
+
+	ModelPlane: ModelEntity
+
+	ModelCurve: ModelEntity
+
+	ModelPart: ModelEntity
+
+	PartEntity: ModelEntity
+
+	PartFace: PartEntity
+
+	PartEdge: PartEntity
+
+	
+	

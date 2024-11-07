@@ -1,0 +1,79 @@
+$USES
+	ODL.AbstractTypes
+	GECAD.Commands
+	
+$TYPES
+	//Commands interface
+	gcCommand:object
+		function IsEnabled: boolean
+		function Execute
+		
+	commands: arrayOf.gcCommand
+	GeCAD
+		Project:
+			Save
+			SaveAs
+			Export
+			Open
+			Undo
+			Redo
+		Model:commands	
+			Regenerate
+			RegenerateteLastFeature
+			Play
+		Model.Create:commands
+			Plane
+			Sketch
+			Extrude
+			Revolve
+			Fillet
+			Chamfer
+			Draft
+			Pattern
+			Combine
+			Scale
+		Sketch:commands
+			Point
+			Contour
+			ArcByTwoPoints
+			ArcByCenter
+			Circle
+			Load
+			Save
+	
+	TFileName: string
+	
+	TRecentFile:object
+		FileType: enum(Model, Sketch, Import)
+		FileName: TFileName
+		CreatedBy: string
+		Created: Date
+		LastChanged: Date
+		PreviewFile: TFileName
+		ThumbnailFile: TFileName
+
+	GeCADApp:interface
+		Project
+			RecentFiles: TRecentFiles
+				property Count: integer
+				property File(i: integer): TRecentFile
+				property UpdateStamp: TUpdateStamp
+				property FilterText: string
+				property FileTypes: set(TRecentFile.FileType)
+			$METHODS
+				function Save
+				function SaveAs(FileName: string)
+				function Export(FileName: string)
+				function Open(FileName: string)
+				function Undo
+				function Redo
+				property FileName: string
+		
+		Model
+			hlFeature: ICADFeature
+			slFeature: ICADFeature
+		
+		Sketch
+		property CurrentMode:enum(Model, Sketch, Assembly)
+		function ExecuteCommand(cmd: GeCADCommand):boolean
+		

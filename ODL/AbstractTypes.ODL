@@ -1,0 +1,283 @@
+%ODL
+
+$DOC
+	! Object Definition Language (ODL)
+		! Foreword
+			ODL is a file format designed to be:
+				* Easy to read
+				* Easy to write
+				* Easy to parse
+				* Strongly typed
+				* a lightweight replacement for XML, JSON
+				
+			It enables both type definition and object serialization, and also documentation. 
+			Which in turn enables domain specific syntax highlighting and code completion.
+			
+			The reference parser is provided as a single, dependency-free .pas file. 
+			It can be easily translated to any other programming language with the aid of a GPT.
+			
+			Additionally, a syntax highlighter and a code completion library are available in source code.
+			
+			Furthermore, a complete application, a full-fledged code editor for ODL files, is provided in source code. 
+			This editor itself leverages ODL files to define its entire design and style.
+		
+		! Syntax description
+			Shortly put, the file is a tree of nodes. The tree structure is denoted with TABs and brackets (...,...). 
+			In code the ODL tree node can be represented like this
+				ODLNode
+					Parent, Child, Sibling:@ODLNode
+					TypeParent, TypeChild, TypeSibling: @ODLNode
+					Name: string
+					Value: string
+					$Prefix_attributes
+						type 
+						const
+						var
+						function
+						constructor
+						method
+					$Suffix_attributes:
+						#private: boolean(false)
+						#transparent: boolean(false)
+						#enabled: boolean(true)
+					$Doc: text //Комментарий
+					$Address   //for debugging and syntax highlighting
+						File: @ODLFile
+						Line:number
+						Col: number
+			Predefined special ODL nodes are marked with the prefix $.
+			In addition a node can have attributes and comments. The attributes start with # and follow
+			the node definition after a whitespace. Comments are either in the form of a line comment marked with // 
+			or in the form of a multilined text in the special $DOC node
+			
+			! Initialization
+			
+			! References and Expressions
+				The value definition allows using references and expressions.
+				references are marked with @
+				expressions can be used anywhere instead of the value
+				
+			! Functions and constructors, interfaces
+					
+		
+		! Value types
+			Value types are types that are mapped to the value types of any programming language
+		
+		! Type Attributes
+		
+
+
+$TYPES
+	null							//Пустое значение
+	object 							//Абстрактный тип
+		$PREDEFINED_ATTRIBUTES
+			attribute #transparent: boolean(false)
+			attribute #enabled: boolean(true)
+			attribute #visible: boolean(true)
+			attribute #valid: boolean(false)
+			attribute #flat:boolean(false)
+		$PREDEFINED_PROPERTIES
+			property self: @selftype
+			property selftype: string
+			property selfname: string
+			property parent: @object
+			property result: @object
+		$PREDEFINED_FUNCTIONS
+			function #IsValid:boolean(true)
+			function #IsVisible:boolean(true)
+			function #IsEnabled:boolean(true)
+		$PREDEFINED_GROUPS
+			$PARAMETERS
+			//Параметры функции
+			$TYPES : arrayOf.type
+			//Объявления типов. Не сериализуются
+			$DATA : arrayOf.object
+			//Объявления полей данных. Сериализуются.
+			$PROPERTIES: arrayOf.property
+			//Объявления вычисляемых свойств
+			$FUNCTIONS : arrayOf.function
+			//Объявления функций и конструкторов объекта. Не сериализуются
+			$METHODS  : arrayOf.method
+			//Объявления методов объекта или интерфейса, которые реализуются рантаймом снаружи
+	
+	record:object //Объект, который напрямую маппируется в память
+
+	@object							//указатель или ссылка на объект
+	
+	arrayOf.object 					//Массив объектов
+		property length: integer
+
+	number:object					//число
+		#min:selftype
+		#max:selftype
+	
+	integer: number 				//целое число
+		property bytes:arrayOf.byte[0..3]
+	
+	byte: integer #min(0) #max(255)	//байт
+	
+	enum:integer 					//Перечисление
+
+	boolean: enum(false, true)		//Булевое значение
+	
+	float: number					//Число с дробью
+
+	percent: float #min(0) #max(100)//Проценты
+	
+	unitfloat: float #min(0) #max(1)
+	
+	THSLA:record(h,s,l,a: float)
+	TRGBA:record(r,g,b,a: float)
+	
+	color: integer					//цвет
+		function ToHSL: THSLA
+		constructor FromHSL(hsl: THSLA)
+		function ToRGBA: TRGBA
+		constructor FromRGBA(rgba: TRGBA)
+
+	string:object					//строка
+		property length: integer
+		function Chr(i: integer):string
+	
+	text: arrayOf.string			//текст
+	
+	code: arrayOf.codeStatement
+	
+	codeStatement: object
+
+	csInit: codeStatement 		//PropPath(expression) OR PropPath := expression
+		prop: @object  
+		value: expression
+		
+	csVar: codeStatement 		//var VarName[:VarType](expression) OR var VarName[: VarType] := expression(VarName)
+		prop: object
+		value: expression
+
+	csCall: codeStatement		//FuncName(FuncParameters)
+		func:@function
+		funcparameters:arrayOf.expression
+
+	csIf: codeStatement			//IF(expression: boolean)
+		condition: expression(boolean)
+		CODE: code
+
+	csElseIf: codeStatement		//ELSEIF(expression: boolean)
+		condition: boolean
+		CODE: code
+
+	csElse:codeStatement		//ELSE
+		CODE: code
+
+	csFor:codeStatement			//FOR(IterVarName:IterVarType, MinValue,MaxValue: IterVarType)
+		iMin, iMax: integer
+		CODE: code
+	
+	csWhile:codeStatement		//WHILE(expression:boolean)
+		condition:expression
+		CODE: code
+	
+$CONSTANTS
+	null: object				//All objects are nullable
+	
+$OPERATORS
+	+		//ADD(a, b)
+	-		//SUB(a, b)	
+	*		//MUL(a, b)
+	/		//DIV(a, b)
+	^		//POW(a, b)
+	! 		//NOT a
+	AND		//AND(a, b): boolean
+	OR		//OR(a, b): boolean
+	NOT		//NOT
+	<		//LESS(a, b):boolean
+	>		//GREATER(a, b): boolean
+	<=		//LE(a, b): boolean
+	>=		//GE(a, b): boolean
+	<>		//NOT EQ(a, b): boolean
+	=		//EQ(a, b): boolean
+	!=		//NOT EQ(a, b): boolean
+	
+$FUNCTIONS
+	round(x:float): integer
+	sqr(x:float):float
+	sqrt(x:float):float
+	sin(x:float):float
+	cos(x:float):float
+	tan(x:float):float
+	asin(x:float):float
+	acos(x:float):float
+	atan(x:float):float
+	min(values:arrayOf.number):number
+	max(values:arrayOf.number):number
+	inc(x: @number, incremenent: number(1))
+	dec(x: @number, decrement: number(1))
+	if(condition: boolean, then: T, else: T):T 
+	case(value:T, arrayOf.cases(comparand:T, res:type)):type
+	inSet(value: T, set:arrayOf.T):boolean
+	inRange(value, Min, Max: number):boolean
+			
+
+$CODE_SYNTAX
+	interface InterfaceName			//Внешний API
+	$TYPES
+	$METHODS
+		methodName1(ParamList):ReturnType
+		...
+		methodNameN(ParamList):ReturnType
+		
+	function TypeName.FunctionName(ParametersList):ResultType
+		//Code
+
+	#OpenGL
+		$TYPES
+			IGL: interface
+				$TYPES
+					PrimitiveType: enum
+						LineStrip
+						Triangles
+						Lines
+				$EXTFunctions
+					glColor(Color: color, Alpha: float)
+					glBegin(pt: PrimitiveType)
+					glEnd
+					glVertex(p: T3DPoint)
+				$FUNCTIONS
+					function glArcTo(p1, p2, pc: T2DPoint, r: float, N: integer(10))
+						var a := T2DArc.FromPoints(p1, p2, pc, r)
+						FOR (i, 1, N)
+							glVertex(a.GetPoint(i/N))
+	
+		
+	WHILE(condition: boolean)
+		CODE:code
+	IF(condition: boolean)
+		CODE: code
+	ELSEIF
+		CODE: code
+	ELSE
+		CODE: code
+			
+			
+	function IGLCanvas.DrawRectangle(p1, p2: T2DPoint, r:float, Color: color, Alpha: float)
+		glColor(Color, Alpha)
+		glBegin(LineStrip)
+		var b := T2DBox.FromPoints(p1,p2)
+		IF (r=0)
+			glVertex(b.p1)
+			glVertex(b.p2)
+			glVertex(b.p3)
+			glVertex(b.p4)
+		ELSE
+			glVertex(b.p1.x+r, b.p1.y)
+			glVertex(b.p2.x-r, b.p2.y)
+			glArcTo((b.p2.x-r, b.p2.y), (b.p2.x, b.p2.y+r), (b.p2.x-r, b.p2.y-r), r)
+			...
+		glEnd
+				
+		
+	
+	
+	
+		
+	
+	

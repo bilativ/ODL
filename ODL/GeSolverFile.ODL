@@ -1,0 +1,198 @@
+$USES
+	ODL.AbstractTypes
+	
+$TYPES
+
+	T2DPoint	
+		X:float
+		Y:float
+	
+	T2DBox:object
+		$DATA
+			Min: T2DPoint
+			Max: T2DPoint
+		$PROPERTIES
+			property P1: T2DPoint(Min)
+			property P2: T2DPoint(Max.x, Min.y)
+			property P3: T2DPoint(Max)
+			property P4: T2DPoint(Min.x, Max.y)
+		$CONSTUCTORS
+			constructor FromPoints(p1, p2: T2DPoint)
+				Min(min(p1.x, p2.x), min(p1.y, p2.y))
+				Max(max(p1.x, p2.x), max(p1.y, p2.y))
+				
+			constructor FromCP(center, corner: T2DPoint)
+				var hw := abs(center.x-corner.x)
+				var hh := abs(center.y-corner.y)
+				Min(center.x-hw, center.y-hh)
+				Man(center.x+hw, center.y+hh)
+			
+			
+	TGeSolverModel:object
+		$TYPES $PRIVATE
+			entity: object
+				...
+				id: string
+			
+			geomEntity:entity
+			
+			
+			Point: geomEntity
+				x: float
+				y: float
+				IsFixed: boolean
+				
+			Segment: geomEntity
+				p1: @point
+				p2: @point
+				...//Позиция куда вставляются поля в наследнике
+				lt: enum(Main, Constuct, Axis)
+				IsMorph:boolean
+				
+			Line: Segment
+			L:Line
+			
+			Arc: Segment
+				pc: @point
+				rc: float
+			A:Arc
+				
+			Constraint: entity
+			
+			BiConstraint: Constraint	
+				e1, e2: @geomEntity
+				
+			Tangent: BiConstraint
+			
+			Parallel: BiConstraint
+			
+			Equal: Constraint	
+				entities:ArrayOf.@geomEntity
+				
+			Perpendicular: BiConstraint
+			
+			Dimension: entity
+				...
+				Value: float
+				
+			UDimension: Dimension
+				e: @geomEntity
+				
+			Radial:UDimension
+			RD: Radial
+			
+			Diamertral: UDimension
+			DD: Diametral
+			
+			BiDimension: Dimension	
+				e1: @geomEntity
+				e2: @geomEntity
+				
+			Linear: BiDimension
+			LD:Linear
+			
+			Angular: BiDimension
+			AD:Angular
+			
+			operation
+			fillet:operation(p:@point, r:float)
+		$DATA
+			Variables:arrayOf.float	$transparent
+			Points: arrayOf.point	$transparent
+			Lines: arrayOf.line		$transparent
+			Arcs: arrayOf.Arc 		$transparent
+			Constraints:arrayOf.Constraint
+			Dimensions:arrayOf.Dimension
+			Operations:arrayOf.operation
+			
+			
+	//Constructor
+	constructor Rect(Box: T2DBox):TGeSolverModel
+		Points	
+			P1(Box.p1)
+			P2(Box.p2)
+			P3(Box.p3)
+			P4(Box.p4)
+		Lines	
+			L1(P1, P2)
+			L2(P2, P3)
+			L3(P3, P4)
+			L4(P4, P1)
+		Constaints
+			Parallel(L1, L3)
+			Parallel(L2, L4)
+			Perpendicular(L1, L2)
+			Perpendicular(L2, L3)
+			Perpendicular(L3, L4)
+			Perpendicular(L1, L4)
+		Dimensions	
+			LD(L1, L3)
+			LD(L2, L4)
+			
+	constructor RoundRect(box: T2DBox, r: float):TGeSolverModel
+		self(Rect(box))
+		Operations
+			Fillet(p1, r)
+			Fillet(p2, r)
+			Fillet(p3, r)
+			Fillet(p4, r)
+			
+	constructor RectWH(w, h: integer):TGeSolverModel
+		self(Rect((0, 0), (w, h))
+			
+				
+	constructor RectPP(p1, p2: T2DPoint, r: float):TGeSolverModel
+		self(RoundRect(T2DBox.FromPoints(p1, p2), r))
+	
+	constructor RectCP(center, corner: T2DPoint, r: float):TGeSolverModel
+		self(RoundRect(T2DBox.FromCP(center, corner), r))
+	
+	function min(a, b: number):number
+		result(if(a<b, a, b))
+		
+	function max(a, b: number):number
+		result(if(a>b, a, b))
+		
+	constructor RoundRect(b: T2DBox, r: float):TGeSolverModel 
+		Points	
+			P1(b.p1.x+r, b.p1.y)
+			P2(b.p1.x-r, b.p1.y)
+			P3(b.p2.x, b.p2.y+r)
+			P4(b.p2.x, b.p3.y-r)
+			P5(b.p2.x-r, b.p3.y)
+			P6(b.p4.x-r, b.p4.y)
+			P7(b.p1.x, b.p4.y-r)
+			P8(b.p1.x, b.p1.y+r)
+			PC1(b.p1.x+r, b.p1.y+r)
+			PC2(b.p2.x-r, b.p1.y+r)
+			PC3(b.p3.x-r, b.p3.y-r)
+			PC4(b.p4.x-r, b.p4.y-r)
+		Lines	
+			L1(P1, P2)
+			L2(P3, P4)
+			L3(P5, P6)
+			L4(P7, P8)
+		Arcs
+			Rnd1(P8,P1,PC1,R)
+			Rnd2(P2,P3,PC2,R)
+			Rnd3(P4,P5,PC3,R)
+			Rnd4(P6,P7,PC4,R)
+		Constaints
+			Parallel(L1, L3)
+			Parallel(L2, L4)
+			Perpendicular(L1, L2)
+			Perpendicular(L2, L3)
+			Perpendicular(L3, L4)
+			Perpendicular(L1, L4)
+			Equal(Rd1, Rd2, Rd3, Rd4)
+		Dimensions	
+			LD(L1, L3)
+			LD(L2, L4)
+			RD(Rd1, R)
+				
+				
+	TParametricalModel: object
+		function GetGSModel:TGeSolverModel
+	
+
+		

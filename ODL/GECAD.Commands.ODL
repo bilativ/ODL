@@ -1,0 +1,43 @@
+$USES
+	STUI.ControlTypes
+
+commands: arrayOf.command
+
+mode: command
+	
+modes: arrayOf.mode
+
+GeCAD
+	Project:commands
+		Save
+		SaveAs
+		Export
+		Open
+		Undo
+		Redo
+	Model:commands	
+		Regenerate
+		RegenerateteLastFeature
+		Play
+	Create:commands
+		Plane
+		Sketch
+		Extrude
+		Revolve
+		Fillet
+		Chamfer
+		Draft
+		Pattern
+		Combine
+		Scale
+	Sketch:commands
+		Point
+		Contour
+		ArcByTwoPoints
+		ArcByCenter
+		Circle
+		Load
+		Save
+		
+		
+		

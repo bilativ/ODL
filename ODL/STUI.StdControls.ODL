@@ -1,0 +1,137 @@
+$USES
+	AbstractTypes
+	STUI.ControlTypes
+	
+LAYOUTS
+	LeftToRight: TLayout
+		type(horz)
+		HAlign(center)
+		VAlign(center)
+		FitFirstChild(false)
+		FitLastChild(false)
+
+	RightToLeft: TLayout
+		type(vert)
+		HAlign(center)
+		VAlign(bottom)
+		FitFirstChild(true)
+		FitLastChild(false)
+
+	TopToBottom: TLayout
+		type(vert)
+		HAlign(left)
+		VAlign(top)
+		FitFirstChild(false)
+		FitLastChild(true)
+	
+	HorizontalCentered: TLayout
+		type(horz)
+		HAlign(center)
+		VAlign(center)
+		FitFirstChild(false)
+		FitLastChild(false)
+		
+	VerticalCentered: TLayout
+		type(vert)
+		HAlign(center)
+		VAlign(bottom)
+		FitFirstChild(true)
+		FitLastChild(false)
+		
+	
+%CONTROLS
+	TLabel: TControl
+		%INTERFACE
+			Text: rsString
+		
+	TIcon: TControl
+		%INTERFACE
+			Icon: TIconResource
+
+	TButton: TControl
+		%INTERFACE
+			Icon: rsIcon
+			Caption: TUIString
+		DESIGN
+			Layout:HorizontalCentered
+	TComboButton: TButton
+		%TYPES
+			TPopupPosition: enum(under, above, left, right)
+		%INTERFACE
+			PopupMenu: @TControl
+			PopupPos: TPopupPosition(under)
+			ShowDelay: milliseconds(200)
+			HideDelay: milliseconds(200)
+		%METHODS	
+			ShowPopup:method(Delay: milliseconds, Pos:TPopupPosition)
+			HidePopup:method(Delay: milliseconds, Pos:TPopupPosition)
+		
+	TEdit: TConrol
+		Text: string
+		EVENTS
+			OnChange:method(
+
+	command: function
+		Caption: rsString(@Command.$id)
+		Icon: rsIcon
+		Hint: rsText
+		HotKey(Shift: TShiftState, Key: TKey)
+
+	App:arrayOf.command
+		Close
+		Minimize
+		Maximize
+		Restore
+			
+	TAction:type	
+		Command: command
+			
+	TMenuItem: TControl
+		%INTERFACE
+			command: @Action
+			Caption: rsString(@Action.Caption)
+			Icon: rsIcon(@Action.Icon)
+			SubMenu: TMenu
+		CONTROLS
+			
+	TMenu: TControl
+		Items:ArrayOf.TMenuItem
+		SubMenu: TMenu
+		
+	FileMenu: TMenu	
+		Items
+			(File.New), 
+			(File.Open), 
+			(File.Save), 
+			(File.SaveAs)
+			
+	File
+		New
+		Open
+		Save
+		SaveAs
+		
+	TCombobox: TComboButton
+		Items: arrayOf.object
+		ItemIndex: integer
+		PopupControl(@Menu)
+		Menu: TMenu
+		EVENTS
+			OnSL.CODE
+				ShowPopup(0, @PopupPos)
+			OnUnSL.CODE
+				HidePopup(0)
+			OnHL.CODE
+				ShowPopup(@ShowDelay, @PopupPos)
+			OnUnHL.CODE
+				HidePopup(0)
+		
+	TScrollBox: TControl
+		CONTROLS
+		
+	
+	TTree: TControl
+	
+	TTable: TControl
+	
+	TList: TControl

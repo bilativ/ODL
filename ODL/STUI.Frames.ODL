@@ -1,0 +1,9 @@
+$USES
+	ODL.AbstractTypes
+	STUI.ControlTypes
+	
+TRectFrame: TFrame
+	R:float //Радиус скругления
+	DRAW.CODE
+		SetCurFillColor(@ds.Color, @ds.Alpha)
+		Rect(0, 0, @dr.W, @dr.H, @R)

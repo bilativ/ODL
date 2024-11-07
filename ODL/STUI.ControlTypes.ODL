@@ -1,0 +1,316 @@
+$USES
+	ODL.AbstractTypes
+	STUI.Canvas
+	
+$TYPES
+
+	rsString: @string	//Resource string
+	
+	rsIcon: @string		//Resource icon
+	
+	rsText: @text		//Resource text
+
+	TPadding:integer	//Оступы контрола
+		left: integer
+		right: integer
+		top: integer
+		bottom: integer
+		
+	TSnap:type			//точка привязки прямоугольника
+		Y: enum(top, center, bottom)
+		X: enum(left, center, right)
+			
+	TControlPosition:type	//Позиция контрола 
+		Enabled: boolean(false)
+		Snap:TSnap(top, left)
+		X: integer
+		Y: integer
+		kX: single(0..1)
+		kY: single(0..1)
+		
+	TAlpha:float(0..1)//Прозрачность контрола
+		
+	THAlign:enum(none, left, right, center)
+
+	TVAlign:enum(none, top, bottom, center)
+
+	TLayoutType:enum(None, Horz, Vert, Stack, Flow, Grid)
+
+	ICanvas: interface //Интерфейс рисования контролов
+		SetCurFillColor(c: TColor, a: TAlpha)
+		SetCurStrokeColor(c: TColor: a: TAlpha)
+		SetStrokeWidth(Value: single)
+		SetCurBlurRadius(R: float)
+		SetCurFont(f: TFont)
+		Circle(X:float, Y:float, R:float)
+		Rect(X1:float, Y1:float, X2:float, Y2:float, R:float)
+		DrawString(s: string, r: TRect, ha: THAlign, va: TVAlign)
+		DrawText(s: text, r: TRect, ha: THAlign, va: TVAlign)
+	
+	TLayout: type	//Лэйаут контрола
+	
+	TLinearLayout: TLayout
+		HAlign: THAlign
+		VAlign: TVAlign
+		Spacing: integer
+		ResizeContent: boolean
+		FitLastChild: boolean
+		FitFirstChild: boolean
+		HAutoSize: boolean
+		VAutoSize: boolean
+	
+	THorsLayout: TLinearLayout
+	
+	TVertLayout: TLinearLayout
+		
+	TStackLayout: TLayout
+	
+	TGridLayout: TLayout
+		Nx: integer
+		Ny: integer
+		Spacing: integer
+			X: integer
+			Y: integer
+
+	TSizeConstraint:integer
+		Min: integer
+		Max: integer
+		
+	TSizeConstraints: integer 
+		Width:TSizeConstraint
+		Height:TSizeConstraint
+		
+	TStyleParameter 
+		Color: TControlColor
+		Alpha: TAlpha
+		MultAlpha: TAlpha
+		Font: TFont
+		
+	TControlStyle:TStyleParameter
+		HL: TStyleParameter
+		SL: TStyleParameter
+		HLSL: TStyleParameter
+		Dsbl: TStyleParameter
+			MultAlpha(0.5)
+			
+	TDrawRect:object
+		W: integer
+		H: integer
+		property Xc: integer(W/2)
+		property Yc: integer(H/2)
+
+	TDrawStyle: object
+		Color: TColor
+		Alpha: TAlpha
+		Font: TFont
+		
+	TFrame:object 
+		...
+		Margins: TPadding
+		function OnDraw(c: ICanvas, dr: TDrawRect, ds: TDrawStyle)
+		
+	TRectFrame: TFrame
+		R:float
+		function OnDraw(c: ICanvas, dr: TDrawRect, ds: TDrawStyle)
+			c.SetCurColor(ds.Color, ds.Alpha)
+			c.Rect(0, 0, dr.W, dr.H, self.R)
+		
+	TControlState: enum(Dflt, SL, HL, SLHL, Dsbl)
+		
+	TMouseButton:enum(left, right, middle)
+	
+	TShiftState: set(ctrl, alt, shift)
+
+
+	TControlFlag: enum	
+		Selectable
+		IsToggle
+		HLControl
+		Clipping
+		
+	TMouseEvent: object 	
+		mb:TMouseButton
+		shift:TShiftState
+		X: integer
+		Y: integer
+		ParentX: integer
+		ParentY: integer
+		
+	TControlSource:object
+		IsEnabled: @boolean;
+		IsVisible: @boolean;
+		IsHighlighted: @boolean
+		
+	TCommandSource: TControlSource
+		function Execute
+		
+	TSwitchSource: TControlSource
+		Value: @boolean;
+		
+	TEnumSource: IControlSource
+		SLValue: @enum
+		HLValue: @enum
+		
+		
+
+	TControl:object
+		$DATA
+			Source: @object //Источник данных
+			Hint: @rsText
+			IS:set
+				Selectable: boolean(false)
+				IsToggle:boolean(false)
+				Clipping:boolean(true)
+				HLControl:boolean(false)
+				Visible: boolean(true)
+				Enabled: boolean(true)
+				
+			DESIGN:object
+				Style: TControlStyle
+				Frame: TFrame
+				Padding:TControlPadding
+				Margins: TControlPadding
+				Size: TSizeConstraints
+				Pos: TControlPosition
+		$FUNCTIONS
+			OnDraw(c: ICanvas; dr: TDrawRect; ds: TDrawStyle)
+			OnBeforeDraw(c: ICanvas; dr: TDrawRect; ds: TDrawStyle)
+			OnAfterDraw(c: ICanvas; dr: TDrawRect; ds: TDrawStyle)
+			OnChange
+			OnClick
+			OnRightClick
+			OnMiddleClick
+			OnHL
+			OnUnHL
+			OnSL
+			OnUnSL
+			OnShow
+			OnHide
+			OnMouseMove(me: MouseEvent)
+			OnMouseDrag(me: MouseEvent)
+			OnMouseDown(me: MouseEvent)
+			OnMouseUp(me: MouseEvent)
+			OnMouseDrag(me: MouseEvent)
+
+	TCustomControl: TControl
+		DESIGN
+			Layout:TLayout
+		CONTROLS:arrayOf.TControl	$transparent(true)
+		
+		STRUCTURE:treeOf.@TControl
+		
+	TIconResource:object
+
+	TFileIconResource: TIconResource	
+		FileName: string
+		
+	type alpha: unitfloat
+	type colorAlpha: record
+		Color:color
+		Alpha:alpha
+		const Transparent(0, 0)
+		function ADD(c1, c2: ColorAlpha):ColorAlpha
+			result(AddColors(c1.Color, c2.Color, c1.Alpha, c2.Alpha))
+			
+		
+	TShaderIconResource: TIconResource
+		Size: integer(null)
+			X: integer(parent)
+			Y: integer(parent)
+		...
+		function GetPixelColor(x, y: float):colorAlpha
+		
+	TRoundRectIcon: TShaderIconResource
+		FillColor: colorAlpha
+		StrokeColor: colorAlpha
+		StrokeWidth: float
+		BlurRadius: float
+		Radius: float
+		function RectDist(x, y: float, w, h, r:float):float
+			result(1)
+			w(0.5)
+			var dx:float(0)
+			var dy:float(0)
+			IF (y<r)
+				dy(r-y)
+			ELSEIF (y>h-r)
+				dy(y+r-h)
+			IF (x<r)
+				dx(r-x)
+			ELSEIF (x>w-r)
+				dx(x+r-w)
+			result := sqrt(sqr(dx)+sqr(dy)-Radius
+				
+		function GetPixelColor(x, y: float):colorAlpha
+			var d := RectDist(x, y, Size.X, Size.Y, Radius)
+			var c1 := if(d<=0, FillColor, color.Transparent)
+			var c2 := if(abs(d)-0.5*StrokeWidth<=0, StrokeColor, color.Transparent)
+			result(c1+c2)
+			
+		
+		
+	TUIIcon:object
+		$TYPES
+			TDrawMethod: enum(Stretch, TwoPatch, NinePatch)
+		$DATA
+			DrawMethod:TDrawMethod 
+			Resource: TIconResource
+		
+	TUIFileIcon: object
+		FileName: string
+
+	TLabel: TControl
+		Text: rsString
+
+	TEdit: TControl
+		Text: string
+
+	TText: TControl
+		Text: rsText
+
+	TIcon: TControl
+		Icon: rsIcon
+
+	TSlider: TControl
+		Knob: TCustomControl
+
+	THorzSlider: TSlider
+
+	TVertSlider: TSlider
+
+	TScrollBar: TSlider
+		Knob: TCustomControl
+
+	TScrollBox: TControl
+		ScrollBar: TScrollBar
+		Page: TCustomControl
+	
+	TVertScollBox: TScrollBox
+
+	THorzScrollBox: TScrollBox
+
+	TTreeControl: TControl
+	
+	TListControl: TControl
+
+	TTableColumn
+
+	TTableControl: TControl
+		$TYPES
+			TColumn: object
+				Width: TSizeConstraint
+				AutoSize: boolean
+			TRow: object
+		$INTERFACE
+			RowHeight: integer
+			HeaderHeight: integer
+			Header: TControl
+				Columns:arrayOf.TControl
+			Columns: arrayOf.Column
+			Rows: arrayOf.Row
+	
+
+		
+		
+
+		
